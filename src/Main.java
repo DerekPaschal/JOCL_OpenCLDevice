@@ -28,7 +28,7 @@ public class Main
 	final static boolean useViewer = true;
 	
 	
-	static int n= (int)(Math.pow(2, 12)); //Massive Particles
+	static int n= (int)(Math.pow(2, 15)); //Massive Particles
 	
 	static float arrX[];
 	static float arrY[];
@@ -350,13 +350,13 @@ public class Main
 		
 		RunOpenCL(DeviceType.GPU);
 		
-		TimeUnit.SECONDS.sleep(2);
+		//TimeUnit.SECONDS.sleep(2);
 		
-		RunOpenCL(DeviceType.CPU);
+		//RunOpenCL(DeviceType.CPU);
 		
-		TimeUnit.SECONDS.sleep(2);
+		//TimeUnit.SECONDS.sleep(2);
 		
-		RunJava();
+		//RunJava();
 		
 	}
 

@@ -19,7 +19,7 @@ public class ParticleView extends JFrame
 	public ParticleView(String WindowTitle)
 	{
 		this.setTitle(WindowTitle);
-		//this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setExtendedState(JFrame.MAXIMIZED_BOTH);
 		//this.setUndecorated(true);
 		//this.setSize(800+16, 600+39);
@@ -46,6 +46,7 @@ public class ParticleView extends JFrame
 		panel.Y = Y;
 
 		this.repaint(0);
+		
 	}
 }
 
@@ -79,7 +80,6 @@ class ParticlePanel extends JPanel
 	public void paintComponent(Graphics g) 
 	{
 		
-		
 		g.setColor(Color.BLACK);
 		g.fillRect(0,0,this.windowX,this.windowY);
 		
@@ -91,5 +91,6 @@ class ParticlePanel extends JPanel
 		}
 		
 		this.isRendering.set(false);
+
 	}
 }
