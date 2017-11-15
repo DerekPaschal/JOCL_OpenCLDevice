@@ -1,0 +1,7 @@
+x.y.z
+
+Increment z upon addidion of a patch to the code
+
+Increment y upon addition of backwards compatible features to the code
+
+Increment x upon addition of non-backwards compatible features to the code
