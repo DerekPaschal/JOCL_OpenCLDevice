@@ -17,7 +17,6 @@ import org.jocl.cl_mem;
 import org.jocl.cl_program;
 
 import com.dtp_dev.jocl_openCLdevice.OpenCLDevice;
-import com.dtp_dev.jocl_openCLdevice.OpenCLDevice.DeviceType;
 
 /**
  * Test main class for JOCL Wrapper
@@ -120,7 +119,7 @@ public class Main
 	}
 
 	
-	private static void RunOpenCL(DeviceType ComputeType) throws Exception
+	private static void RunOpenCL(long ComputeType) throws Exception
 	{
 		/**
 	     * The source code of the OpenCL program to execute
@@ -146,7 +145,7 @@ public class Main
 				continue;
 			}
 			
-			if (tempDevice.getDeviceType() == OpenCLDevice.DeviceType.GPU && tempDevice.getPlatformName().toLowerCase().trim().contains("intel")) {
+			if (tempDevice.getDeviceType() == CL.CL_DEVICE_TYPE_GPU && tempDevice.getPlatformName().toLowerCase().trim().contains("intel")) {
 				continue;
 			}
 			
@@ -197,7 +196,7 @@ public class Main
         CL.clSetKernelArg(kernelGrav, 4, Sizeof.cl_mem, Pointer.to(ya_mem_obj));
         CL.clSetKernelArg(kernelGrav, 5, Sizeof.cl_mem, Pointer.to(za_mem_obj));
         CL.clSetKernelArg(kernelGrav, 6, Sizeof.cl_mem, Pointer.to(m_mem_obj));
-        CL.clSetKernelArg(kernelGrav, 7, Sizeof.cl_float4 * 1024, null);
+        CL.clSetKernelArg(kernelGrav, 7, Sizeof.cl_float4 * 256, null);
         
         //Create the Step kernel
         cl_kernel kernelStep = CL.clCreateKernel(program, "Step", null);
@@ -224,7 +223,7 @@ public class Main
 		long before = System.nanoTime();
 		for (int i = 0; i < TimesToRun; i++)
 		{			
-			CL.clEnqueueNDRangeKernel(command_queue, kernelGrav, 1, null, new long[] {n}, new long[] {1024}, 0, null, null);
+			CL.clEnqueueNDRangeKernel(command_queue, kernelGrav, 1, null, new long[] {n}, new long[] {256}, 0, null, null);
 			CL.clFinish(command_queue);
 			
 			CL.clEnqueueNDRangeKernel(command_queue, kernelStep, 1, null, new long[] {n}, null, 0, null, null);
@@ -349,7 +348,7 @@ public class Main
 	
 		TimeUnit.SECONDS.sleep(2);
 		
-		RunOpenCL(DeviceType.GPU);
+		RunOpenCL(CL.CL_DEVICE_TYPE_GPU);
 		
 		//TimeUnit.SECONDS.sleep(2);
 		

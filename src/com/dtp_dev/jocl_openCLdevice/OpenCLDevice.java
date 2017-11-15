@@ -2,6 +2,9 @@ package com.dtp_dev.jocl_openCLdevice;
 
 import static org.jocl.CL.*;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import org.jocl.CL;
 import org.jocl.Pointer;
 import org.jocl.Sizeof;
@@ -27,7 +30,6 @@ import org.jocl.cl_platform_id;
  */
 public class OpenCLDevice 
 {	
-	public enum DeviceType{CPU, GPU, ACCELERATOR};
 	
 	//Hidden
 	
@@ -38,8 +40,9 @@ public class OpenCLDevice
 	private String platformName;
 	private int computeUnits;
 	private long clockSpeed;
-	private DeviceType deviceType;
+	private long deviceType;
 	private boolean doubleSupport;
+	private long[] maxWorkSizes;
 	
 	//Readable + Writable
 	
@@ -56,6 +59,7 @@ public class OpenCLDevice
 		set_clockSpeed();
 		set_deviceType();
 		set_doubleSupport();
+		set_maxWorkSizes();
 	}
 	
 	// Public Methods
@@ -173,7 +177,7 @@ public class OpenCLDevice
 	 * 
 	 * @return
 	 */
-	public DeviceType getDeviceType()
+	public long getDeviceType()
 	{
 		return this.deviceType;
 	}
@@ -187,6 +191,14 @@ public class OpenCLDevice
 		return this.doubleSupport;
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public long[] getMaxWorkSizes() {
+		return this.maxWorkSizes;
+	}
+	
 	// Protected Methods
 	
 	
@@ -195,61 +207,185 @@ public class OpenCLDevice
 	
 	private void set_deviceName()
 	{
-		long size[] = new long[1];
-        clGetDeviceInfo(this.device_id, CL_DEVICE_NAME, 0, null, size);
-        byte buffer[] = new byte[(int)size[0]];
-        clGetDeviceInfo(this.device_id, CL_DEVICE_NAME, buffer.length, Pointer.to(buffer), null);
-        this.deviceName = new String(buffer, 0, buffer.length-1);
+		this.deviceName = getString(this.device_id, CL.CL_DEVICE_NAME);
 	}
 	
 	private void set_platformName()
 	{
-		// Obtain the length of the string that will be queried
-        long size[] = new long[1];
-        clGetPlatformInfo(this.platform_id, CL_PLATFORM_NAME, 0, null, size);
-
-        // Create a buffer of the appropriate size and fill it with the info
-        byte buffer[] = new byte[(int)size[0]];
-        clGetPlatformInfo(this.platform_id, CL_PLATFORM_NAME, buffer.length, Pointer.to(buffer), null);
-
-        // Create a string from the buffer (excluding the trailing \0 byte)
-        this.platformName = new String(buffer, 0, buffer.length-1);
+		this.platformName = getString(this.platform_id, CL.CL_PLATFORM_NAME);
 	}
 	
 	private void set_computeUnits()
 	{
-		int values[] = new int[1];
-        clGetDeviceInfo(this.device_id, CL_DEVICE_MAX_COMPUTE_UNITS, Sizeof.cl_int * 1, Pointer.to(values), null);
-        this.computeUnits = values[0];
+		this.computeUnits = getInt(this.device_id, CL.CL_DEVICE_MAX_COMPUTE_UNITS);
 	}
 	
 	private void set_clockSpeed()
 	{
-		long values[] = new long[1];
-        clGetDeviceInfo(this.device_id, CL_DEVICE_MAX_CLOCK_FREQUENCY, Sizeof.cl_long * 1, Pointer.to(values), null);
-        this.clockSpeed = values[0];
+		this.clockSpeed = getInt(this.device_id, CL.CL_DEVICE_MAX_CLOCK_FREQUENCY);
 	}
 	
 	private void set_deviceType()
 	{
-		long values[] = new long[1];
-        clGetDeviceInfo(this.device_id, CL.CL_DEVICE_TYPE, Sizeof.cl_long * 1, Pointer.to(values), null);
-        long Type = values[0];
-        
-        if( (Type & CL_DEVICE_TYPE_CPU) != 0)
-            this.deviceType = DeviceType.CPU;
-        else if( (Type & CL_DEVICE_TYPE_GPU) != 0)
-        	this.deviceType = DeviceType.GPU;
-        else if( (Type & CL_DEVICE_TYPE_ACCELERATOR) != 0)
-        	this.deviceType = DeviceType.ACCELERATOR;
-        else 
-        	this.deviceType = DeviceType.CPU;
+		this.deviceType = getLong(this.device_id, CL.CL_DEVICE_TYPE);
 	}
 	
 	private void set_doubleSupport()
 	{
-		int values[] = new int[1];
-        clGetDeviceInfo(this.device_id, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE, Sizeof.cl_int * 1, Pointer.to(values), null);    	
-    	this.doubleSupport = (values[0] > 0);
+		this.doubleSupport = (getInt(this.device_id, CL.CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE) > 0);
 	}
+	
+	private void set_maxWorkSizes() {
+		int dim = getInt(this.device_id, CL.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS);
+		
+		this.maxWorkSizes = getSizes(this.device_id, CL.CL_DEVICE_MAX_WORK_ITEM_SIZES, dim);
+	}
+	
+	
+	
+	
+	
+	
+	//Utility Functions to get different return types from OpenCL API
+	/**
+     * Returns the value of the device info parameter with the given name
+     *
+     * @param device The device
+     * @param paramName The parameter name
+     * @return The value
+     */
+    private static int getInt(cl_device_id device, int paramName)
+    {
+        return getInts(device, paramName, 1)[0];
+    }
+
+    /**
+     * Returns the values of the device info parameter with the given name
+     *
+     * @param device The device
+     * @param paramName The parameter name
+     * @param numValues The number of values
+     * @return The value
+     */
+    private static int[] getInts(cl_device_id device, int paramName, int numValues)
+    {
+        int values[] = new int[numValues];
+        clGetDeviceInfo(device, paramName, Sizeof.cl_int * numValues, Pointer.to(values), null);
+        return values;
+    }
+
+    /**
+     * Returns the value of the device info parameter with the given name
+     *
+     * @param device The device
+     * @param paramName The parameter name
+     * @return The value
+     */
+    private static long getLong(cl_device_id device, int paramName)
+    {
+        return getLongs(device, paramName, 1)[0];
+    }
+
+    /**
+     * Returns the values of the device info parameter with the given name
+     *
+     * @param device The device
+     * @param paramName The parameter name
+     * @param numValues The number of values
+     * @return The value
+     */
+    private static long[] getLongs(cl_device_id device, int paramName, int numValues)
+    {
+        long values[] = new long[numValues];
+        clGetDeviceInfo(device, paramName, Sizeof.cl_long * numValues, Pointer.to(values), null);
+        return values;
+    }
+
+    /**
+     * Returns the value of the device info parameter with the given name
+     *
+     * @param device The device
+     * @param paramName The parameter name
+     * @return The value
+     */
+    private static String getString(cl_device_id device, int paramName)
+    {
+        // Obtain the length of the string that will be queried
+        long size[] = new long[1];
+        clGetDeviceInfo(device, paramName, 0, null, size);
+
+        // Create a buffer of the appropriate size and fill it with the info
+        byte buffer[] = new byte[(int)size[0]];
+        clGetDeviceInfo(device, paramName, buffer.length, Pointer.to(buffer), null);
+
+        // Create a string from the buffer (excluding the trailing \0 byte)
+        return new String(buffer, 0, buffer.length-1);
+    }
+
+    /**
+     * Returns the value of the platform info parameter with the given name
+     *
+     * @param platform The platform
+     * @param paramName The parameter name
+     * @return The value
+     */
+    private static String getString(cl_platform_id platform, int paramName)
+    {
+        // Obtain the length of the string that will be queried
+        long size[] = new long[1];
+        clGetPlatformInfo(platform, paramName, 0, null, size);
+
+        // Create a buffer of the appropriate size and fill it with the info
+        byte buffer[] = new byte[(int)size[0]];
+        clGetPlatformInfo(platform, paramName, buffer.length, Pointer.to(buffer), null);
+
+        // Create a string from the buffer (excluding the trailing \0 byte)
+        return new String(buffer, 0, buffer.length-1);
+    }
+    
+    /**
+     * Returns the value of the device info parameter with the given name
+     *
+     * @param device The device
+     * @param paramName The parameter name
+     * @return The value
+     */
+    private static long getSize(cl_device_id device, int paramName)
+    {
+        return getSizes(device, paramName, 1)[0];
+    }
+    
+    /**
+     * Returns the values of the device info parameter with the given name
+     *
+     * @param device The device
+     * @param paramName The parameter name
+     * @param numValues The number of values
+     * @return The value
+     */
+    static long[] getSizes(cl_device_id device, int paramName, int numValues)
+    {
+        // The size of the returned data has to depend on 
+        // the size of a size_t, which is handled here
+        ByteBuffer buffer = ByteBuffer.allocate(
+            numValues * Sizeof.size_t).order(ByteOrder.nativeOrder());
+        clGetDeviceInfo(device, paramName, Sizeof.size_t * numValues, 
+            Pointer.to(buffer), null);
+        long values[] = new long[numValues];
+        if (Sizeof.size_t == 4)
+        {
+            for (int i=0; i<numValues; i++)
+            {
+                values[i] = buffer.getInt(i * Sizeof.size_t);
+            }
+        }
+        else
+        {
+            for (int i=0; i<numValues; i++)
+            {
+                values[i] = buffer.getLong(i * Sizeof.size_t);
+            }
+        }
+        return values;
+    }
 }
