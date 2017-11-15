@@ -45,7 +45,7 @@ public class Main
 	static float arrM[];
 	
 	
-	static float Seconds = (float)1000.0;
+	static float Seconds = (float)500.0;
 	
 	static ParticleView viewer;
 	
@@ -125,7 +125,7 @@ public class Main
 		/**
 	     * The source code of the OpenCL program to execute
 	     */
-		String programSource = new String(Files.readAllBytes(Paths.get("kernels/Test3.cl")), StandardCharsets.UTF_8);
+		String programSource = new String(Files.readAllBytes(Paths.get("kernels/Test4.cl")), StandardCharsets.UTF_8);
 		
 		setupArrs();
 		
@@ -197,6 +197,7 @@ public class Main
         CL.clSetKernelArg(kernelGrav, 4, Sizeof.cl_mem, Pointer.to(ya_mem_obj));
         CL.clSetKernelArg(kernelGrav, 5, Sizeof.cl_mem, Pointer.to(za_mem_obj));
         CL.clSetKernelArg(kernelGrav, 6, Sizeof.cl_mem, Pointer.to(m_mem_obj));
+        CL.clSetKernelArg(kernelGrav, 7, Sizeof.cl_float4 * 1024, null);
         
         //Create the Step kernel
         cl_kernel kernelStep = CL.clCreateKernel(program, "Step", null);
@@ -223,7 +224,7 @@ public class Main
 		long before = System.nanoTime();
 		for (int i = 0; i < TimesToRun; i++)
 		{			
-			CL.clEnqueueNDRangeKernel(command_queue, kernelGrav, 1, null, new long[] {n}, null, 0, null, null);
+			CL.clEnqueueNDRangeKernel(command_queue, kernelGrav, 1, null, new long[] {n}, new long[] {1024}, 0, null, null);
 			CL.clFinish(command_queue);
 			
 			CL.clEnqueueNDRangeKernel(command_queue, kernelStep, 1, null, new long[] {n}, null, 0, null, null);
@@ -310,7 +311,7 @@ public class Main
 			}
 			
 			//Put something here showing progress...
-			if ((timesRun+1)%(TimesToRun*0.1) == 0)
+			if ((timesRun+1)%(TimesToRun*0.01) == 0)
 			{
 				System.out.print((int)((float)(timesRun+1)*100/TimesToRun) + "%  ");
 			}
