@@ -1,6 +1,5 @@
 import static org.jocl.CL.clCreateCommandQueueWithProperties;
 import static org.jocl.CL.clCreateContext;
-import static org.jocl.CL.clGetDeviceInfo;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -47,7 +46,7 @@ public class Main
 	static float arrM[];
 	
 	
-	static float Seconds = (float)100.0;
+	static float Seconds = (float)1000.0;
 	
 	static ParticleView viewer;
 	
@@ -100,8 +99,6 @@ public class Main
 		float r;
 		float centerX = 0.0f, centerY = 0.0f, centerZ = 0.0f;
 		float avgMass = 0.00001f;
-		float totalMass = avgMass*n;
-		float totalVel = 0.0f;
 		for (int i = 0; i < n; i++)
 		{						
 			//r = (float) (Math.random() * radius);
@@ -148,29 +145,29 @@ public class Main
 				continue;
 			}
 			
-			if (tempDevice.DEVICE_TYPE() == CL.CL_DEVICE_TYPE_GPU && tempDevice.PLATFORM_NAME().toLowerCase().trim().contains("intel")) {
+			if (tempDevice.deviceType() == CL.CL_DEVICE_TYPE_GPU && tempDevice.platformName().toLowerCase().trim().contains("intel")) {
 				continue;
 			}
 			
-			if (tempDevice.DEVICE_TYPE() == ComputeType) {
+			if (tempDevice.deviceType() == ComputeType) {
 				device = tempDevice;
 				continue;
 			}
 		}	
-		long local_size = Math.min(device.DEVICE_MAX_WORK_ITEM_SIZES()[0], device.DEVICE_MAX_WORK_GROUP_SIZE());
+		long local_size = Math.min(device.maxWorkItemSizes()[0], device.maxWorkGroupSize());
 		
 		long localConstMem = 0;
 		long localMemPerLocalSize = Sizeof.cl_float4;
 		//If local memory size is less than memory taken by local buffers (Entered manually unfortunately)
-        if (device.DEVICE_LOCAL_MEM_SIZE() < (localMemPerLocalSize * local_size) + localConstMem) {
-        	local_size = (device.DEVICE_LOCAL_MEM_SIZE() - localConstMem) / localMemPerLocalSize;	
+        if (device.localMemSize() < (localMemPerLocalSize * local_size) + localConstMem) {
+        	local_size = (device.localMemSize() - localConstMem) / localMemPerLocalSize;	
         }
 		
 		// Create a context
-        cl_context context = clCreateContext(null, 1, new cl_device_id[]{ device.DEVICE_ID() }, null, null, null);
+        cl_context context = clCreateContext(null, 1, new cl_device_id[]{ device.device_id() }, null, null, null);
 
         // Create the command queue
-        cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device.DEVICE_ID(), null, null);
+        cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device.device_id(), null, null);
         
         //Create memory buffers on device
         cl_mem x_mem_obj = CL.clCreateBuffer(context, CL.CL_MEM_READ_WRITE, Sizeof.cl_float * ((float[])arrX).length, null, null);
@@ -211,7 +208,7 @@ public class Main
         
         //Get the maximum kernel work group size for kernelGrav
         ByteBuffer buffer = ByteBuffer.allocate(1 * Sizeof.size_t).order(ByteOrder.nativeOrder());
-        CL.clGetKernelWorkGroupInfo(kernelGrav, device.DEVICE_ID(), CL.CL_KERNEL_WORK_GROUP_SIZE, Sizeof.size_t, Pointer.to(buffer), null);
+        CL.clGetKernelWorkGroupInfo(kernelGrav, device.device_id(), CL.CL_KERNEL_WORK_GROUP_SIZE, Sizeof.size_t, Pointer.to(buffer), null);
         long values[] = new long[1];
         if (Sizeof.size_t == 4)
         {
@@ -257,7 +254,8 @@ public class Main
 			viewer = new ParticleView("OpenCL Compute Window");
 		
 		//Begin the Compute Benchmark
-		System.out.println("\nStart OpenCL Compute with: \t"+ device.DEVICE_NAME());
+		System.out.println("\nStart OpenCL Compute with: \t"+ device.deviceName());
+		System.out.println("Using local work size: \t" + local_size);
 		int TimesToRun = Math.round(Seconds);
 		long before = System.nanoTime();
 		for (int i = 0; i < TimesToRun; i++)
@@ -391,9 +389,9 @@ public class Main
 		
 		RunOpenCL(CL.CL_DEVICE_TYPE_GPU);
 		
-		TimeUnit.SECONDS.sleep(2);
+		//TimeUnit.SECONDS.sleep(2);
 		
-		RunOpenCL(CL.CL_DEVICE_TYPE_CPU);
+		//RunOpenCL(CL.CL_DEVICE_TYPE_CPU);
 		
 		//TimeUnit.SECONDS.sleep(2);
 		

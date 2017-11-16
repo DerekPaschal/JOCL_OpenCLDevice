@@ -34,38 +34,89 @@ public class OpenCLDevice
 	//Hidden
 	
 	//Readable
-	private cl_device_id device_id;
 	private cl_platform_id platform_id;
-	private String device_name;
-	private String platform_name;
-	private int device_max_compute_units;
-	private long device_max_clock_frequency;
-	private long device_type;
-	private int device_preferred_vector_width_double;
-	private int device_max_work_item_diminsions;
-	private long[] device_max_work_item_sizes;
-	private long device_max_work_group_size;
-	private long device_local_mem_size;
+	private cl_device_id device_id;
+	
+	private String platformName;
+	private String deviceName;
+	private String deviceVendor;
+	private String driverVersion;
+	private long deviceType;
+	private int maxComputeUnits;
+	private long maxWorkItemDimensions;
+	private long[] maxWorkItemSizes;
+	private long maxWorkGroupSize;
+	private long maxClockFrequency;
+	private int addressBits;
+	private long maxMemAllocSize;
+	private long globalMemSize;
+	private int errorCorrectionSupport;
+	private int localMemType;
+	private long localMemSize;
+	private long maxConstantBufferSize;
+	private long queueProperties;
+	private int imageSupport;
+	private int maxReadImageArgs;
+	private int maxWriteImageArgs;
+	private long singleFpConfig;
+	private long image2dMaxWidth;
+	private long image2dMaxHeight;
+	private long image3dMaxWidth;
+	private long image3dMaxHeight;
+	private long image3dMaxDepth;
+	private int preferredVectorWidthChar;
+	private int preferredVectorWidthShort;
+	private int preferredVectorWidthInt;
+	private int preferredVectorWidthLong;
+	private int preferredVectorWidthFloat;
+	private int preferredVectorWidthDouble;
+	
+	
 	
 	//Readable + Writable
 	
 	//Direct
 	
+	@SuppressWarnings("deprecation")
 	protected OpenCLDevice(cl_device_id device, cl_platform_id platform)
 	{
 		device_id = device;
 		platform_id = platform;
 		
-		this.device_name = getString(this.device_id, CL.CL_DEVICE_NAME);
-		this.platform_name = getString(this.platform_id, CL.CL_PLATFORM_NAME);
-		this.device_max_compute_units = getInt(this.device_id, CL.CL_DEVICE_MAX_COMPUTE_UNITS);
-		this.device_max_clock_frequency = getInt(this.device_id, CL.CL_DEVICE_MAX_CLOCK_FREQUENCY);
-		this.device_type = getLong(this.device_id, CL.CL_DEVICE_TYPE);
-		this.device_preferred_vector_width_double = getInt(this.device_id, CL.CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE);
-		this.device_max_work_item_diminsions = getInt(this.device_id, CL.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS);
-		this.device_max_work_item_sizes = getSizes(this.device_id, CL.CL_DEVICE_MAX_WORK_ITEM_SIZES, this.device_max_work_item_diminsions);
-		this.device_max_work_group_size = getSize(this.device_id, CL.CL_DEVICE_MAX_WORK_GROUP_SIZE);
-		this.device_local_mem_size = getLong(this.device_id, CL.CL_DEVICE_LOCAL_MEM_SIZE);
+		this.platformName = getString(platform, CL.CL_PLATFORM_NAME);
+        this.deviceName = getString(device, CL.CL_DEVICE_NAME);
+        this.deviceVendor = getString(device, CL.CL_DEVICE_VENDOR);
+        this.driverVersion = getString(device, CL.CL_DRIVER_VERSION);
+        this.deviceType = getLong(device, CL.CL_DEVICE_TYPE);
+        this.maxComputeUnits = getInt(device, CL.CL_DEVICE_MAX_COMPUTE_UNITS);      
+        this.maxWorkItemDimensions = getLong(device, CL.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS);     
+        this.maxWorkItemSizes = getSizes(device, CL.CL_DEVICE_MAX_WORK_ITEM_SIZES, (int) this.maxWorkItemDimensions);
+        this.maxWorkGroupSize = getSize(device, CL.CL_DEVICE_MAX_WORK_GROUP_SIZE);
+        this.maxClockFrequency = getLong(device, CL.CL_DEVICE_MAX_CLOCK_FREQUENCY);
+        this.addressBits = getInt(device, CL.CL_DEVICE_ADDRESS_BITS);
+        this.maxMemAllocSize = getLong(device, CL.CL_DEVICE_MAX_MEM_ALLOC_SIZE);
+        this.globalMemSize = getLong(device, CL.CL_DEVICE_GLOBAL_MEM_SIZE);
+        this.errorCorrectionSupport = getInt(device, CL.CL_DEVICE_ERROR_CORRECTION_SUPPORT);
+        this.localMemType = getInt(device, CL.CL_DEVICE_LOCAL_MEM_TYPE);
+        this.localMemSize = getLong(device, CL.CL_DEVICE_LOCAL_MEM_SIZE);
+        this.maxConstantBufferSize = getLong(device, CL.CL_DEVICE_MAX_CONSTANT_BUFFER_SIZE);
+        this.queueProperties = getLong(device, CL.CL_DEVICE_QUEUE_PROPERTIES);
+        this.imageSupport = getInt(device, CL.CL_DEVICE_IMAGE_SUPPORT);
+        this.maxReadImageArgs = getInt(device, CL.CL_DEVICE_MAX_READ_IMAGE_ARGS);
+        this.maxWriteImageArgs = getInt(device, CL.CL_DEVICE_MAX_WRITE_IMAGE_ARGS);
+        this.singleFpConfig = getLong(device, CL.CL_DEVICE_SINGLE_FP_CONFIG);
+        this.image2dMaxWidth = getSize(device, CL.CL_DEVICE_IMAGE2D_MAX_WIDTH);
+        this.image2dMaxHeight = getSize(device, CL.CL_DEVICE_IMAGE2D_MAX_HEIGHT);
+        this.image3dMaxWidth = getSize(device, CL.CL_DEVICE_IMAGE3D_MAX_WIDTH);
+        this.image3dMaxHeight = getSize(device, CL.CL_DEVICE_IMAGE3D_MAX_HEIGHT);
+        this.image3dMaxDepth = getSize(device, CL.CL_DEVICE_IMAGE3D_MAX_DEPTH);
+        this.preferredVectorWidthChar = getInt(device, CL.CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR);
+        this.preferredVectorWidthShort = getInt(device, CL.CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT);
+        this.preferredVectorWidthInt = getInt(device, CL.CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT);
+        this.preferredVectorWidthLong = getInt(device, CL.CL_DEVICE_PREFERRED_VECTOR_WIDTH_LONG);
+        this.preferredVectorWidthFloat = getInt(device, CL.CL_DEVICE_PREFERRED_VECTOR_WIDTH_FLOAT);
+        this.preferredVectorWidthDouble = getInt(device, CL.CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE);
+       
 	}
 	
 	// Public Methods
@@ -127,94 +178,148 @@ public class OpenCLDevice
 		return OpenCLDevices;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
-	public cl_device_id DEVICE_ID() {
-		return this.device_id;
-	}
 	
-	/**
-	 * 
-	 * @return
-	 */
-	public cl_platform_id PLATFORM_ID() {
+	
+	public cl_platform_id platform_id() {
 		return this.platform_id;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public String DEVICE_NAME()
+
+	public cl_device_id device_id() {
+		return this.device_id;
+	}
+
+	public String platformName()
 	{
-		return this.device_name;
+		return this.platformName;
 	}
-	
-	/**
-	 * 
-	 * @return
-	 */
-	public String PLATFORM_NAME()
+
+	public String deviceName()
 	{
-		return this.platform_name;
+		return this.deviceName;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
-	public int DEVICE_MAX_COMPUTE_UNITS()
-	{
-		return this.device_max_compute_units;
+	public String deviceVendor() {
+		return this.deviceVendor;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
-	public long DEVICE_MAX_CLOCK_FREQUENCY()
-	{
-		return this.device_max_clock_frequency;
+	public String driverVersion() {
+		return this.driverVersion;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
-	public long DEVICE_TYPE()
-	{
-		return this.device_type;
+	public long deviceType() {
+		return this.deviceType;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
-	public int DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE()
-	{
-		return this.device_preferred_vector_width_double;
+	public int maxComputeUnits() {
+		return this.maxComputeUnits;
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
-	public long[] DEVICE_MAX_WORK_ITEM_SIZES() {
-		return this.device_max_work_item_sizes;
+	public long maxWorkItemDimensions() {
+		return this.maxWorkItemDimensions();
 	}
 	
-	/**
-	 * 
-	 * @return
-	 */
-	public long DEVICE_MAX_WORK_GROUP_SIZE() {
-		return this.device_max_work_group_size;
+	public long[] maxWorkItemSizes() {
+		return this.maxWorkItemSizes;
 	}
 	
-	public long DEVICE_LOCAL_MEM_SIZE() {
-		return this.device_local_mem_size;
+	public long maxWorkGroupSize() {
+		return this.maxWorkGroupSize;
+	}
+	
+	public long maxClockFrequency() {
+		return this.maxClockFrequency;
+	}
+	
+	public int addressBits() {
+		return this.addressBits;
+	}
+	
+	public long maxMemAllocSize() {
+		return this.maxMemAllocSize;
+	}
+	
+	public long globalMemSize() {
+		return this.globalMemSize;
+	}
+	
+	public int errorCorrectionSupport() {
+		return this.errorCorrectionSupport;
+	}
+	
+	public int localMemType() {
+		return this.localMemType;
+	}
+	
+	public long localMemSize() {
+		return this.localMemSize;
+	}
+	
+	public long maxConstantBufferSize() {
+		return this.maxConstantBufferSize;
+	}
+	
+	public long queueProperties() {
+		return this.queueProperties;
+	}
+	
+	public int imageSupport() {
+		return this.imageSupport;
+	}
+	
+	public int maxReadImageArgs() {
+		return this.maxReadImageArgs;
+	}
+	
+	public int maxWriteImageArgs( ) {
+		return this.maxWriteImageArgs;
+	}
+	
+	public long singleFpConfig() {
+		return this.singleFpConfig;
+	}
+	
+	public long image2dMaxWidth() {
+		return this.image2dMaxWidth;
+	}
+	
+	public long image2dMaxHeight() {
+		return this.image2dMaxHeight;
+	}
+	
+	public long image3dMaxWidth() {
+		return this.image3dMaxWidth;
+	}
+	
+	public long image3dMaxHeight() {
+		return this.image3dMaxHeight;
+	}
+	
+	public long image3dMaxDepth() {
+		return this.image3dMaxDepth;
+	}
+	
+	public int preferredVectorWidthChar() {
+		return this.preferredVectorWidthChar;
+	}
+	
+	public int preferredVectorWidthShort() {
+		return this.preferredVectorWidthShort;
+	}
+	
+	public int preferredVectorWidthInt() {
+		return this.preferredVectorWidthInt;
+	}
+	
+	public int preferredVectorWidthLong() {
+		return this.preferredVectorWidthLong;
+	}
+	
+	public int preferredVectorWidthFloat() {
+		return this.preferredVectorWidthFloat;
+	}
+	
+	public int preferredVectorWidthDouble() {
+		return this.preferredVectorWidthDouble;
 	}
 	
 	// Protected Methods
