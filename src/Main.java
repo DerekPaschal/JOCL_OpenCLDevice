@@ -1,6 +1,9 @@
 import static org.jocl.CL.clCreateCommandQueueWithProperties;
 import static org.jocl.CL.clCreateContext;
+import static org.jocl.CL.clGetDeviceInfo;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -44,7 +47,7 @@ public class Main
 	static float arrM[];
 	
 	
-	static float Seconds = (float)500.0;
+	static float Seconds = (float)100.0;
 	
 	static ParticleView viewer;
 	
@@ -92,7 +95,7 @@ public class Main
 	
 	private static void generateDisk()
 	{
-		float radius = 100;
+		float radius = 200;
 		float theta;
 		float r;
 		float centerX = 0.0f, centerY = 0.0f, centerZ = 0.0f;
@@ -145,21 +148,29 @@ public class Main
 				continue;
 			}
 			
-			if (tempDevice.getDeviceType() == CL.CL_DEVICE_TYPE_GPU && tempDevice.getPlatformName().toLowerCase().trim().contains("intel")) {
+			if (tempDevice.DEVICE_TYPE() == CL.CL_DEVICE_TYPE_GPU && tempDevice.PLATFORM_NAME().toLowerCase().trim().contains("intel")) {
 				continue;
 			}
 			
-			if (tempDevice.getDeviceType() == ComputeType) {
+			if (tempDevice.DEVICE_TYPE() == ComputeType) {
 				device = tempDevice;
 				continue;
 			}
-		}		
+		}	
+		long local_size = Math.min(device.DEVICE_MAX_WORK_ITEM_SIZES()[0], device.DEVICE_MAX_WORK_GROUP_SIZE());
+		
+		long localConstMem = 0;
+		long localMemPerLocalSize = Sizeof.cl_float4;
+		//If local memory size is less than memory taken by local buffers (Entered manually unfortunately)
+        if (device.DEVICE_LOCAL_MEM_SIZE() < (localMemPerLocalSize * local_size) + localConstMem) {
+        	local_size = (device.DEVICE_LOCAL_MEM_SIZE() - localConstMem) / localMemPerLocalSize;	
+        }
 		
 		// Create a context
-        cl_context context = clCreateContext(null, 1, new cl_device_id[]{ device.getDeviceID() }, null, null, null);
+        cl_context context = clCreateContext(null, 1, new cl_device_id[]{ device.DEVICE_ID() }, null, null, null);
 
         // Create the command queue
-        cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device.getDeviceID(), null, null);
+        cl_command_queue command_queue = clCreateCommandQueueWithProperties(context, device.DEVICE_ID(), null, null);
         
         //Create memory buffers on device
         cl_mem x_mem_obj = CL.clCreateBuffer(context, CL.CL_MEM_READ_WRITE, Sizeof.cl_float * ((float[])arrX).length, null, null);
@@ -196,7 +207,36 @@ public class Main
         CL.clSetKernelArg(kernelGrav, 4, Sizeof.cl_mem, Pointer.to(ya_mem_obj));
         CL.clSetKernelArg(kernelGrav, 5, Sizeof.cl_mem, Pointer.to(za_mem_obj));
         CL.clSetKernelArg(kernelGrav, 6, Sizeof.cl_mem, Pointer.to(m_mem_obj));
-        CL.clSetKernelArg(kernelGrav, 7, Sizeof.cl_float4 * 256, null);
+        CL.clSetKernelArg(kernelGrav, 7, Sizeof.cl_float4 * local_size, null);
+        
+        //Get the maximum kernel work group size for kernelGrav
+        ByteBuffer buffer = ByteBuffer.allocate(1 * Sizeof.size_t).order(ByteOrder.nativeOrder());
+        CL.clGetKernelWorkGroupInfo(kernelGrav, device.DEVICE_ID(), CL.CL_KERNEL_WORK_GROUP_SIZE, Sizeof.size_t, Pointer.to(buffer), null);
+        long values[] = new long[1];
+        if (Sizeof.size_t == 4)
+        {
+            for (int i=0; i<1; i++)
+            {
+                values[i] = buffer.getInt(i * Sizeof.size_t);
+            }
+        }
+        else
+        {
+            for (int i=0; i<1; i++)
+            {
+                values[i] = buffer.getLong(i * Sizeof.size_t);
+            }
+        }
+        long kernel_work_size = values[0];
+
+        //If kernel work size is lower than current work size, adapt
+        if (kernel_work_size < local_size) {
+        	local_size = kernel_work_size;
+        	
+        	//reassign any local kernel arguments depending on local_size
+        	CL.clSetKernelArg(kernelGrav, 7, Sizeof.cl_float4 * local_size, null);
+        }
+        
         
         //Create the Step kernel
         cl_kernel kernelStep = CL.clCreateKernel(program, "Step", null);
@@ -216,26 +256,26 @@ public class Main
 		if (useViewer)
 			viewer = new ParticleView("OpenCL Compute Window");
 		
-		int TimesToRun = Math.round(Seconds);
-		
 		//Begin the Compute Benchmark
-		System.out.println("\nStart OpenCL Compute with: \t"+ device.getDeviceName());
+		System.out.println("\nStart OpenCL Compute with: \t"+ device.DEVICE_NAME());
+		int TimesToRun = Math.round(Seconds);
 		long before = System.nanoTime();
 		for (int i = 0; i < TimesToRun; i++)
 		{			
-			CL.clEnqueueNDRangeKernel(command_queue, kernelGrav, 1, null, new long[] {n}, new long[] {256}, 0, null, null);
+			CL.clEnqueueNDRangeKernel(command_queue, kernelGrav, 1, null, new long[] {n}, new long[] {local_size}, 0, null, null);
+			if (useViewer) {
+				viewer.PaintParticleView(n, arrX, arrY);
+			}
 			CL.clFinish(command_queue);
 			
 			CL.clEnqueueNDRangeKernel(command_queue, kernelStep, 1, null, new long[] {n}, null, 0, null, null);
 			CL.clFinish(command_queue);
 			
+		
 			CL.clEnqueueReadBuffer(command_queue, x_mem_obj, CL.CL_TRUE, 0, Sizeof.cl_float * ((float[])arrX).length, Pointer.to(arrX), 0, null, null);
 			CL.clEnqueueReadBuffer(command_queue, y_mem_obj, CL.CL_TRUE, 0, Sizeof.cl_float * ((float[])arrY).length, Pointer.to(arrY), 0, null, null);
 			CL.clEnqueueReadBuffer(command_queue, z_mem_obj, CL.CL_TRUE, 0, Sizeof.cl_float * ((float[])arrZ).length, Pointer.to(arrZ), 0, null, null);
 			
-			if (useViewer) {
-				viewer.PaintParticleView(n, arrX, arrY);
-			}
 		}
 		long after = System.nanoTime();
 		double duration =((after-before)/(1e9f));
@@ -315,12 +355,13 @@ public class Main
 				System.out.print((int)((float)(timesRun+1)*100/TimesToRun) + "%  ");
 			}
 			
-			
-			for (int gid = 0; gid < n; gid++)
-			{
-				arrX[gid] += arrXv[gid];
-				arrY[gid] += arrYv[gid];
-				arrZ[gid] += arrZv[gid];
+			synchronized(arrX) {
+				for (int gid = 0; gid < n; gid++)
+				{
+					arrX[gid] += arrXv[gid];
+					arrY[gid] += arrYv[gid];
+					arrZ[gid] += arrZv[gid];
+				}
 			}
 			
 			if (useViewer)
@@ -350,9 +391,9 @@ public class Main
 		
 		RunOpenCL(CL.CL_DEVICE_TYPE_GPU);
 		
-		//TimeUnit.SECONDS.sleep(2);
+		TimeUnit.SECONDS.sleep(2);
 		
-		//RunOpenCL(DeviceType.CPU);
+		RunOpenCL(CL.CL_DEVICE_TYPE_CPU);
 		
 		//TimeUnit.SECONDS.sleep(2);
 		

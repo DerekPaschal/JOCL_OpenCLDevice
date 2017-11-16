@@ -85,10 +85,12 @@ class ParticlePanel extends JPanel
 		
 		g.setColor(Color.WHITE);
 		
+		
 		for (int i = 0; i < n; i++)
 		{
 			g.fillRect((int)(X[i]+this.centerXoffset), (int)(Y[i]+this.centerYoffset), 1, 1);
 		}
+	
 		
 		this.isRendering.set(false);
 

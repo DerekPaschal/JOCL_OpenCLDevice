@@ -36,13 +36,16 @@ public class OpenCLDevice
 	//Readable
 	private cl_device_id device_id;
 	private cl_platform_id platform_id;
-	private String deviceName;
-	private String platformName;
-	private int computeUnits;
-	private long clockSpeed;
-	private long deviceType;
-	private boolean doubleSupport;
-	private long[] maxWorkSizes;
+	private String device_name;
+	private String platform_name;
+	private int device_max_compute_units;
+	private long device_max_clock_frequency;
+	private long device_type;
+	private int device_preferred_vector_width_double;
+	private int device_max_work_item_diminsions;
+	private long[] device_max_work_item_sizes;
+	private long device_max_work_group_size;
+	private long device_local_mem_size;
 	
 	//Readable + Writable
 	
@@ -53,13 +56,16 @@ public class OpenCLDevice
 		device_id = device;
 		platform_id = platform;
 		
-		set_deviceName();
-		set_platformName();
-		set_computeUnits();
-		set_clockSpeed();
-		set_deviceType();
-		set_doubleSupport();
-		set_maxWorkSizes();
+		this.device_name = getString(this.device_id, CL.CL_DEVICE_NAME);
+		this.platform_name = getString(this.platform_id, CL.CL_PLATFORM_NAME);
+		this.device_max_compute_units = getInt(this.device_id, CL.CL_DEVICE_MAX_COMPUTE_UNITS);
+		this.device_max_clock_frequency = getInt(this.device_id, CL.CL_DEVICE_MAX_CLOCK_FREQUENCY);
+		this.device_type = getLong(this.device_id, CL.CL_DEVICE_TYPE);
+		this.device_preferred_vector_width_double = getInt(this.device_id, CL.CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE);
+		this.device_max_work_item_diminsions = getInt(this.device_id, CL.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS);
+		this.device_max_work_item_sizes = getSizes(this.device_id, CL.CL_DEVICE_MAX_WORK_ITEM_SIZES, this.device_max_work_item_diminsions);
+		this.device_max_work_group_size = getSize(this.device_id, CL.CL_DEVICE_MAX_WORK_GROUP_SIZE);
+		this.device_local_mem_size = getLong(this.device_id, CL.CL_DEVICE_LOCAL_MEM_SIZE);
 	}
 	
 	// Public Methods
@@ -125,7 +131,7 @@ public class OpenCLDevice
 	 * 
 	 * @return
 	 */
-	public cl_device_id getDeviceID() {
+	public cl_device_id DEVICE_ID() {
 		return this.device_id;
 	}
 	
@@ -133,7 +139,7 @@ public class OpenCLDevice
 	 * 
 	 * @return
 	 */
-	public cl_platform_id getPlatformID() {
+	public cl_platform_id PLATFORM_ID() {
 		return this.platform_id;
 	}
 	
@@ -141,108 +147,81 @@ public class OpenCLDevice
 	 * 
 	 * @return
 	 */
-	public String getDeviceName()
+	public String DEVICE_NAME()
 	{
-		return this.deviceName;
+		return this.device_name;
 	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public String getPlatformName()
+	public String PLATFORM_NAME()
 	{
-		return this.platformName;
+		return this.platform_name;
 	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public int getComputeUnits()
+	public int DEVICE_MAX_COMPUTE_UNITS()
 	{
-		return this.computeUnits;
+		return this.device_max_compute_units;
 	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public long getClockSpeed()
+	public long DEVICE_MAX_CLOCK_FREQUENCY()
 	{
-		return this.clockSpeed;
+		return this.device_max_clock_frequency;
 	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public long getDeviceType()
+	public long DEVICE_TYPE()
 	{
-		return this.deviceType;
+		return this.device_type;
 	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public boolean getDoubleSupport()
+	public int DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE()
 	{
-		return this.doubleSupport;
+		return this.device_preferred_vector_width_double;
 	}
 	
 	/**
 	 * 
 	 * @return
 	 */
-	public long[] getMaxWorkSizes() {
-		return this.maxWorkSizes;
+	public long[] DEVICE_MAX_WORK_ITEM_SIZES() {
+		return this.device_max_work_item_sizes;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public long DEVICE_MAX_WORK_GROUP_SIZE() {
+		return this.device_max_work_group_size;
+	}
+	
+	public long DEVICE_LOCAL_MEM_SIZE() {
+		return this.device_local_mem_size;
 	}
 	
 	// Protected Methods
 	
 	
 	
-	// Private Methods
-	
-	private void set_deviceName()
-	{
-		this.deviceName = getString(this.device_id, CL.CL_DEVICE_NAME);
-	}
-	
-	private void set_platformName()
-	{
-		this.platformName = getString(this.platform_id, CL.CL_PLATFORM_NAME);
-	}
-	
-	private void set_computeUnits()
-	{
-		this.computeUnits = getInt(this.device_id, CL.CL_DEVICE_MAX_COMPUTE_UNITS);
-	}
-	
-	private void set_clockSpeed()
-	{
-		this.clockSpeed = getInt(this.device_id, CL.CL_DEVICE_MAX_CLOCK_FREQUENCY);
-	}
-	
-	private void set_deviceType()
-	{
-		this.deviceType = getLong(this.device_id, CL.CL_DEVICE_TYPE);
-	}
-	
-	private void set_doubleSupport()
-	{
-		this.doubleSupport = (getInt(this.device_id, CL.CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE) > 0);
-	}
-	
-	private void set_maxWorkSizes() {
-		int dim = getInt(this.device_id, CL.CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS);
-		
-		this.maxWorkSizes = getSizes(this.device_id, CL.CL_DEVICE_MAX_WORK_ITEM_SIZES, dim);
-	}
-	
-	
-	
+	// Private Methods	
 	
 	
 	

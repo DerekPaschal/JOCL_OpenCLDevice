@@ -23,16 +23,15 @@ kernel void Grav(global const float *X, global const float *Y, global const floa
 			pblock[lid].y = Y[jb*nt+lid];
 			pblock[lid].z = Z[jb*nt+lid];
 			pblock[lid].w = M[jb*nt+lid];
-			//{X[jb*nt+lid], Y[jb*nt+lid], Y[jb*nt+lid], M[jb*nt+lid]};
 			barrier(CLK_LOCAL_MEM_FENCE);
 			
 			for(int j = 0; j < nt; j++) {
 				dist = pblock[j] - Pos;
 			
-				distMag = (sqrt((dist.x*dist.x)  + (dist.y*dist.y) + (dist.z*dist.z))) + 0.0000001f;
+				distMag = rsqrt((dist.x*dist.x)  + (dist.y*dist.y) + (dist.z*dist.z) + 0.0001f);
 				
 				//Gravity
-				Acc +=  dist * (dist.w/ ((distMag*distMag)));
+				Acc +=  dist * dist.w * distMag*distMag;
 			}
 		}
 		
